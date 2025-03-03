@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>جهاز الاتصال اللاسلكي - دردشة صوتية</title>
+  <!-- أيقونات Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 
+    integrity="sha512-Fo3rlrZj/k7ujTnH2N2lSc92vU2b1P3oV+DKR2a/fzCQY+4SOVk4MKzA+f9RZV7ezJ6rIEXJ4w1wq6+mFFh8VA==" 
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    /* أسلوب الصفحة العام */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #1e1e1e;
+      color: white;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+    }
+    .container {
+      margin-top: 30px;
+      padding: 0 10px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+    header h2 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    header button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background-color: #d32f2f;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    .screen {
+      background-color: #000;
+      padding: 20px;
+      width: 300px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 255, 255, 0.5);
+    }
+    .screen input {
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .screen button {
+      width: 100%;
+      padding: 10px;
+      cursor: pointer;
+      background-color: #008cba;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+    .screen button:hover {
+      background-color: #0077a3;
+    }
+    .status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #00ffcc;
+    }
+    /* أزرار التحكم الإضافية */
+    #historyBtn,
+    #cancelCallBtn,
+    #randomCallBtn,
+    #switchUserBtn,
+    #endCallRandomBtn {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #4caf50;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 5px;
+    }
+    /* إخفاء بعض الأزرار افتراضيًا */
+    #cancelCallBtn,
+    #switchUserBtn,
+    #endCallRandomBtn {
+      display: none;
+    }
+    /* إخفاء عنصر الصوت */
+    #remoteAudio {
+      display: none;
+    }
+    /* أنماط المودال */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 1; 
+      left: 0;
+      top: 0;
+      width: 100%; 
+      height: 100%; 
+      overflow: auto; 
+      background-color: rgba(0,0,0,0.4); 
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; 
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 400px;
+      text-align: center;
+      border-radius: 10px;
+      direction: rtl;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .modal-content button {
+      padding: 10px;
+      background-color: #008cba;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .close {
+      color: #aaa;
+      float: left;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+    }
+    #historyList {
+      list-style: none;
+      padding: 0;
+      text-align: right;
+      margin-top: 10px;
+    }
+    #historyList li {
+      background-color: #e0e0e0;
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2><i class="fas fa-phone"></i> جهاز الاتصال اللاسلكي</h2>
+      <button id="deleteAccountBtn">حذف حسابي</button>
+    </header>
+    <div class="screen">
+      <input type="text" id="friendId" placeholder="أدخل رقم صديقك" />
+      <button onclick="callFriend()">اتصال</button>
+    </div>
+    <div class="status" id="status"></div>
+    <button id="historyBtn">سجل المكالمات</button>
+    <button id="cancelCallBtn">إلغاء الاتصال</button>
+    <button id="randomCallBtn">اتصال عشوائي</button>
+    <button id="switchUserBtn">تبديل المستخدم</button>
+    <button id="endCallRandomBtn">إنهاء المكالمة</button>
+    <!-- عنصر صوتي لتشغيل الدردشة الصوتية -->
+    <audio id="remoteAudio" autoplay></audio>
+  </div>
+
+  <!-- مودال سجل المكالمات -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>سجل المكالمات</h3>
+      <ul id="historyList"></ul>
+    </div>
+  </div>
+
+  <!-- مودال إعادة التسجيل بعد حذف الحساب -->
+  <div id="reRegisterModal" class="modal">
+    <div class="modal-content">
+      <h3>تسجيل من جديد</h3>
+      <button id="reRegisterBtn">تسجيل جديد</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { 
+      getDatabase, ref, set, onValue, remove, push 
+    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArPUxB8PIVWm-pe2AxoJFcccohKIfPDN4",
+      authDomain: "laslke.firebaseapp.com",
+      databaseURL: "https://laslke-default-rtdb.firebaseio.com",
+      projectId: "laslke",
+      storageBucket: "laslke.firebasestorage.app",
+      messagingSenderId: "735087474647",
+      appId: "1:735087474647:web:8c21f0ad6c5c276947fd92",
+      measurementId: "G-GDSF3FPSVR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // الحصول على الرقم الخاص بالمستخدم من localStorage أو إنشاؤه بحيث يبقى محفوظاً حتى بعد إعادة تشغيل المتصفح
+    let userId = localStorage.getItem("userId");
+    if (!userId) {
+      userId = "313" + Math.floor(100 + Math.random() * 900);
+      localStorage.setItem("userId", userId);
+    }
+    console.log("User ID:", userId);
+    document.getElementById("status").innerText = `رقمك: ${userId}`;
+
+    // سجل المكالمات من localStorage
+    let callHistory = JSON.parse(localStorage.getItem("callHistory")) || [];
+    function updateHistoryUI() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
+      callHistory.forEach(number => {
+        const li = document.createElement("li");
+        li.textContent = number;
+        historyList.appendChild(li);
+      });
+    }
+
+    // متغير لتخزين معرف الرقم الذي تم الاتصال به حاليًا (لطلب الاتصال الخارجي)
+    let currentCallFriend = null;
+    // متغير لتحديد وضعية الاتصال (عادي أو عشوائي)
+    let currentCallMode = "normal";
+
+    // إعداد إعدادات WebRTC
+    const configuration = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
+    let peerConnection;
+    let localStream;
+
+    // علم لمنع إنشاء إجابة أكثر من مرة في حالة استقبال العرض (في وضع المتلقي)
+    let answerCreated = false;
+
+    // وظيفة الاتصال العادي (باستخدام الرقم المدخل)
+    window.callFriend = function callFriend() {
+      const friendId = document.getElementById("friendId").value.trim();
+      if (!friendId || friendId.length !== 6 || !friendId.startsWith("313")) {
+        alert("يجب إدخال رقم صحيح يبدأ بـ 313 ويتكون من 6 أرقام");
+        return;
+      }
+      if (friendId === userId) {
+        alert("لا يمكنك الاتصال بنفسك");
+        return;
+      }
+      currentCallMode = "normal";
+      currentCallFriend = friendId;
+      const callRef = ref(db, `calls/${friendId}`);
+      set(callRef, { from: userId })
+        .then(() => {
+          console.log("تم إرسال طلب الاتصال إلى", friendId);
+          alert("تم إرسال طلب الاتصال إلى " + friendId);
+          callHistory.push(friendId);
+          localStorage.setItem("callHistory", JSON.stringify(callHistory));
+        })
+        .catch((error) => {
+          console.error("Error sending call:", error);
+          alert("حدث خطأ أثناء إرسال طلب الاتصال: " + error.message);
+        });
+    };
+
+    // استقبال طلبات الاتصال للمستقبل (للاتصال العادي)
+    onValue(ref(db, `calls/${userId}`), (snapshot) => {
+      if (snapshot.exists()) {
+        const { from: callerId } = snapshot.val();
+        console.log("طلب اتصال وارد من:", callerId);
+        if (confirm(`هل تريد ربط اللاسلكي مع ${callerId}؟`)) {
+          set(ref(db, `callsAccepted/${callerId}`), { callee: userId })
+            .then(() => {
+              startCalleeConnection(callerId);
+            })
+            .catch((error) => {
+              console.error("Error accepting call:", error);
+              alert("حدث خطأ أثناء قبول الاتصال: " + error.message);
+            });
+        }
+        remove(ref(db, `calls/${userId}`));
+      }
+    });
+
+    // للمُتصل (العادي) الاستماع لقبول الاتصال
+    onValue(ref(db, `callsAccepted/${userId}`), (snapshot) => {
+      if (snapshot.exists()) {
+        const { callee } = snapshot.val();
+        console.log("تم قبول الاتصال من قبل:", callee);
+        remove(ref(db, `callsAccepted/${userId}`));
+        startCallerConnection(callee);
+      }
+    });
+
+    // وظيفة الاتصال العادي للمُتصل (caller)
+    async function startCallerConnection(calleeId) {
+      const connectionKey = `${userId}_${calleeId}`;
+      peerConnection = new RTCPeerConnection(configuration);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+      } catch (e) {
+        alert("حدث خطأ في الوصول إلى الميكروفون: " + e);
+        return;
+      }
+      peerConnection.addEventListener("track", event => {
+        document.getElementById("remoteAudio").srcObject = event.streams[0];
+      });
+      peerConnection.addEventListener("icecandidate", event => {
+        if (event.candidate) {
+          push(ref(db, `webrtc/${connectionKey}/callerCandidates`), event.candidate.toJSON());
+        }
+      });
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        await set(ref(db, `webrtc/${connectionKey}/offer`), {
+          sdp: offer.sdp,
+          type: offer.type
+        });
+      } catch (e) {
+        alert("حدث خطأ أثناء إنشاء العرض: " + e);
+        return;
+      }
+      onValue(ref(db, `webrtc/${connectionKey}/answer`), async snapshot => {
+        if (snapshot.exists()) {
+          const answerData = snapshot.val();
+          try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answerData));
+            document.getElementById("status").innerText = "متصل مع " + calleeId;
+            document.getElementById("cancelCallBtn").style.display = "inline-block";
+          } catch (e) {
+            alert("حدث خطأ أثناء ضبط الإجابة: " + e);
+          }
+        }
+      });
+      onValue(ref(db, `webrtc/${connectionKey}/calleeCandidates`), snapshot => {
+        if (snapshot.exists()) {
+          snapshot.forEach(childSnapshot => {
+            const candidate = childSnapshot.val();
+            try {
+              peerConnection.addIceCandidate(candidate);
+            } catch (e) {
+              console.error(e);
+            }
+          });
+        }
+      });
+    }
+
+    // وظيفة الاتصال العادي للمستقبل (callee)
+    async function startCalleeConnection(callerId) {
+      answerCreated = false;
+      const connectionKey = `${callerId}_${userId}`;
+      peerConnection = new RTCPeerConnection(configuration);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+      } catch (e) {
+        alert("حدث خطأ في الوصول إلى الميكروفون: " + e);
+        return;
+      }
+      peerConnection.addEventListener("track", event => {
+        document.getElementById("remoteAudio").srcObject = event.streams[0];
+      });
+      peerConnection.addEventListener("icecandidate", event => {
+        if (event.candidate) {
+          push(ref(db, `webrtc/${connectionKey}/calleeCandidates`), event.candidate.toJSON());
+        }
+      });
+      onValue(ref(db, `webrtc/${connectionKey}/offer`), async snapshot => {
+        if (snapshot.exists() && !answerCreated) {
+          answerCreated = true;
+          const offerData = snapshot.val();
+          try {
+            // إذا لم يتم ضبط remoteDescription بعد، فقم بضبطه
+            if (!peerConnection.remoteDescription) {
+              await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+            }
+            if (peerConnection.signalingState === "have-remote-offer") {
+              const answer = await peerConnection.createAnswer();
+              await peerConnection.setLocalDescription(answer);
+              await set(ref(db, `webrtc/${connectionKey}/answer`), {
+                sdp: answer.sdp,
+                type: answer.type
+              });
+              document.getElementById("status").innerText = "متصل مع " + callerId;
+              document.getElementById("cancelCallBtn").style.display = "inline-block";
+            } else {
+              console.error("حالة الإشارة غير صحيحة: ", peerConnection.signalingState);
+            }
+          } catch (e) {
+            alert("حدث خطأ أثناء إنشاء الإجابة: " + e);
+          }
+        }
+      });
+      onValue(ref(db, `webrtc/${connectionKey}/callerCandidates`), snapshot => {
+        if (snapshot.exists()) {
+          snapshot.forEach(childSnapshot => {
+            const candidate = childSnapshot.val();
+            try {
+              peerConnection.addIceCandidate(candidate);
+            } catch (e) {
+              console.error(e);
+            }
+          });
+        }
+      });
+    }
+
+    // وظيفة إلغاء الاتصال أو الربط (للاتصال العادي والعشوائي)
+    function cancelCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      if (currentCallMode === "normal" && currentCallFriend) {
+        remove(ref(db, `calls/${currentCallFriend}`));
+        currentCallFriend = null;
+      }
+      document.getElementById("status").innerText = "تم إلغاء الاتصال";
+      document.getElementById("cancelCallBtn").style.display = "none";
+      document.getElementById("switchUserBtn").style.display = "none";
+      document.getElementById("endCallRandomBtn").style.display = "none";
+      document.getElementById("randomCallBtn").style.display = "inline-block";
+      currentCallMode = "normal";
+    }
+
+    document.getElementById("cancelCallBtn").addEventListener("click", cancelCall);
+
+    // وظيفة الانضمام لاتصال عشوائي
+    function joinRandomCall() {
+      currentCallMode = "random";
+      set(ref(db, `randomCalls/${userId}`), { waiting: true, timestamp: Date.now() });
+      document.getElementById("status").innerText = "انتظر مطابقة عشوائية...";
+      onValue(ref(db, 'randomCalls'), snapshot => {
+        let matchedUser = null;
+        snapshot.forEach(child => {
+          if(child.key !== userId) {
+            matchedUser = child.key;
+          }
+        });
+        if(matchedUser) {
+          remove(ref(db, `randomCalls/${userId}`));
+          remove(ref(db, `randomCalls/${matchedUser}`));
+          startRandomCallConnection(matchedUser);
+        }
+      });
+    }
+
+    // بدء الاتصال العشوائي بين المستخدمين
+    async function startRandomCallConnection(partnerId) {
+      const connectionKey = `random/${(userId < partnerId) ? userId + "_" + partnerId : partnerId + "_" + userId}`;
+      if(userId < partnerId) {
+        peerConnection = new RTCPeerConnection(configuration);
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+          });
+        } catch (e) {
+          alert("حدث خطأ في الوصول إلى الميكروفون: " + e);
+          return;
+        }
+        peerConnection.addEventListener("track", event => {
+          document.getElementById("remoteAudio").srcObject = event.streams[0];
+        });
+        peerConnection.addEventListener("icecandidate", event => {
+          if(event.candidate) {
+            push(ref(db, `webrtc/${connectionKey}/callerCandidates`), event.candidate.toJSON());
+          }
+        });
+        try {
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          await set(ref(db, `webrtc/${connectionKey}/offer`), {
+            sdp: offer.sdp,
+            type: offer.type
+          });
+        } catch (e) {
+          alert("حدث خطأ أثناء إنشاء العرض: " + e);
+          return;
+        }
+        onValue(ref(db, `webrtc/${connectionKey}/answer`), async snapshot => {
+          if(snapshot.exists()){
+            const answerData = snapshot.val();
+            try {
+              await peerConnection.setRemoteDescription(new RTCSessionDescription(answerData));
+              document.getElementById("status").innerText = "متصل مع " + partnerId;
+              document.getElementById("switchUserBtn").style.display = "inline-block";
+              document.getElementById("endCallRandomBtn").style.display = "inline-block";
+              document.getElementById("randomCallBtn").style.display = "none";
+              document.getElementById("cancelCallBtn").style.display = "none";
+            } catch(e) {
+              alert("حدث خطأ أثناء ضبط الإجابة: " + e);
+            }
+          }
+        });
+        onValue(ref(db, `webrtc/${connectionKey}/calleeCandidates`), snapshot => {
+          if(snapshot.exists()){
+            snapshot.forEach(childSnapshot => {
+              const candidate = childSnapshot.val();
+              try {
+                peerConnection.addIceCandidate(candidate);
+              } catch(e) {
+                console.error(e);
+              }
+            });
+          }
+        });
+      } else {
+        peerConnection = new RTCPeerConnection(configuration);
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+          });
+        } catch (e) {
+          alert("حدث خطأ في الوصول إلى الميكروفون: " + e);
+          return;
+        }
+        peerConnection.addEventListener("track", event => {
+          document.getElementById("remoteAudio").srcObject = event.streams[0];
+        });
+        peerConnection.addEventListener("icecandidate", event => {
+          if(event.candidate) {
+            push(ref(db, `webrtc/${connectionKey}/calleeCandidates`), event.candidate.toJSON());
+          }
+        });
+        onValue(ref(db, `webrtc/${connectionKey}/offer`), async snapshot => {
+          if(snapshot.exists()){
+            const offerData = snapshot.val();
+            try {
+              await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+              const answer = await peerConnection.createAnswer();
+              await peerConnection.setLocalDescription(answer);
+              await set(ref(db, `webrtc/${connectionKey}/answer`), {
+                sdp: answer.sdp,
+                type: answer.type
+              });
+              document.getElementById("status").innerText = "متصل مع " + partnerId;
+              document.getElementById("switchUserBtn").style.display = "inline-block";
+              document.getElementById("endCallRandomBtn").style.display = "inline-block";
+              document.getElementById("randomCallBtn").style.display = "none";
+              document.getElementById("cancelCallBtn").style.display = "none";
+            } catch(e) {
+              alert("حدث خطأ أثناء إنشاء الإجابة: " + e);
+            }
+          }
+        });
+        onValue(ref(db, `webrtc/${connectionKey}/callerCandidates`), snapshot => {
+          if(snapshot.exists()){
+            snapshot.forEach(childSnapshot => {
+              const candidate = childSnapshot.val();
+              try {
+                peerConnection.addIceCandidate(candidate);
+              } catch(e) {
+                console.error(e);
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // زر الاتصال العشوائي
+    document.getElementById("randomCallBtn").addEventListener("click", joinRandomCall);
+
+    // زر تبديل المستخدم: إنهاء الاتصال الحالي والبحث عن شريك جديد
+    document.getElementById("switchUserBtn").addEventListener("click", function(){
+      cancelCall();
+      joinRandomCall();
+    });
+
+    // زر إنهاء المكالمة في الوضع العشوائي
+    document.getElementById("endCallRandomBtn").addEventListener("click", function(){
+      cancelCall();
+      document.getElementById("switchUserBtn").style.display = "none";
+      document.getElementById("endCallRandomBtn").style.display = "none";
+      document.getElementById("randomCallBtn").style.display = "inline-block";
+    });
+
+    // إعداد مودال سجل المكالمات
+    const historyModal = document.getElementById("historyModal");
+    const historyBtn = document.getElementById("historyBtn");
+    const closeModal = document.querySelector("#historyModal .close");
+
+    historyBtn.addEventListener("click", () => {
+      updateHistoryUI();
+      historyModal.style.display = "block";
+    });
+    closeModal.addEventListener("click", () => {
+      historyModal.style.display = "none";
+    });
+    window.addEventListener("click", (event) => {
+      if (event.target === historyModal) {
+        historyModal.style.display = "none";
+      }
+    });
+
+    // زر حذف الحساب وإعادة التسجيل
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+    const reRegisterModal = document.getElementById("reRegisterModal");
+    const reRegisterBtn = document.getElementById("reRegisterBtn");
+
+    deleteAccountBtn.addEventListener("click", () => {
+      if (confirm("هل أنت متأكد من حذف حسابك؟")) {
+        localStorage.removeItem("userId");
+        localStorage.removeItem("callHistory");
+        reRegisterModal.style.display = "block";
+      }
+    });
+
+    reRegisterBtn.addEventListener("click", () => {
+      userId = "313" + Math.floor(100 + Math.random() * 900);
+      localStorage.setItem("userId", userId);
+      document.getElementById("status").innerText = `رقمك: ${userId}`;
+      reRegisterModal.style.display = "none";
+      callHistory = [];
+    });
+  </script>
+</body>
+</html>
