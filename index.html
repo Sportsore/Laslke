@@ -4,12 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>جهاز الاتصال اللاسلكي - دردشة صوتية</title>
-  <!-- أيقونات Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 
-    integrity="sha512-Fo3rlrZj/k7ujTnH2N2lSc92vU2b1P3oV+DKR2a/fzCQY+4SOVk4MKzA+f9RZV7ezJ6rIEXJ4w1wq6+mFFh8VA==" 
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnH2N2lSc92vU2b1P3oV+DKR2a/fzCQY+4SOVk4MKzA+f9RZV7ezJ6rIEXJ4w1wq6+mFFh8VA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
-    /* أسلوب الصفحة العام */
     body {
       font-family: Arial, sans-serif;
       text-align: center;
@@ -78,7 +74,6 @@
       font-size: 18px;
       color: #00ffcc;
     }
-    /* أزرار التحكم الإضافية */
     #historyBtn,
     #cancelCallBtn,
     #randomCallBtn,
@@ -94,17 +89,14 @@
       font-size: 16px;
       margin-right: 5px;
     }
-    /* إخفاء بعض الأزرار افتراضيًا */
     #cancelCallBtn,
     #switchUserBtn,
     #endCallRandomBtn {
       display: none;
     }
-    /* إخفاء عنصر الصوت */
     #remoteAudio {
       display: none;
     }
-    /* أنماط المودال */
     .modal {
       display: none; 
       position: fixed; 
@@ -182,11 +174,8 @@
     <button id="randomCallBtn">اتصال عشوائي</button>
     <button id="switchUserBtn">تبديل المستخدم</button>
     <button id="endCallRandomBtn">إنهاء المكالمة</button>
-    <!-- عنصر صوتي لتشغيل الدردشة الصوتية -->
     <audio id="remoteAudio" autoplay></audio>
   </div>
-
-  <!-- مودال سجل المكالمات -->
   <div id="historyModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
@@ -194,21 +183,15 @@
       <ul id="historyList"></ul>
     </div>
   </div>
-
-  <!-- مودال إعادة التسجيل بعد حذف الحساب -->
   <div id="reRegisterModal" class="modal">
     <div class="modal-content">
       <h3>تسجيل من جديد</h3>
       <button id="reRegisterBtn">تسجيل جديد</button>
     </div>
   </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { 
-      getDatabase, ref, set, onValue, remove, push 
-    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
+    import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
     const firebaseConfig = {
       apiKey: "AIzaSyArPUxB8PIVWm-pe2AxoJFcccohKIfPDN4",
       authDomain: "laslke.firebaseapp.com",
@@ -219,11 +202,8 @@
       appId: "1:735087474647:web:8c21f0ad6c5c276947fd92",
       measurementId: "G-GDSF3FPSVR"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    // الحصول على الرقم الخاص بالمستخدم من localStorage أو إنشاؤه بحيث يبقى محفوظاً حتى بعد إعادة تشغيل المتصفح
     let userId = localStorage.getItem("userId");
     if (!userId) {
       userId = "313" + Math.floor(100 + Math.random() * 900);
@@ -231,8 +211,6 @@
     }
     console.log("User ID:", userId);
     document.getElementById("status").innerText = `رقمك: ${userId}`;
-
-    // سجل المكالمات من localStorage
     let callHistory = JSON.parse(localStorage.getItem("callHistory")) || [];
     function updateHistoryUI() {
       const historyList = document.getElementById("historyList");
@@ -243,23 +221,14 @@
         historyList.appendChild(li);
       });
     }
-
-    // متغير لتخزين معرف الرقم الذي تم الاتصال به حاليًا (لطلب الاتصال الخارجي)
     let currentCallFriend = null;
-    // متغير لتحديد وضعية الاتصال (عادي أو عشوائي)
     let currentCallMode = "normal";
-
-    // إعداد إعدادات WebRTC
     const configuration = {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     };
     let peerConnection;
     let localStream;
-
-    // علم لمنع إنشاء إجابة أكثر من مرة في حالة استقبال العرض (في وضع المتلقي)
     let answerCreated = false;
-
-    // وظيفة الاتصال العادي (باستخدام الرقم المدخل)
     window.callFriend = function callFriend() {
       const friendId = document.getElementById("friendId").value.trim();
       if (!friendId || friendId.length !== 6 || !friendId.startsWith("313")) {
@@ -285,8 +254,6 @@
           alert("حدث خطأ أثناء إرسال طلب الاتصال: " + error.message);
         });
     };
-
-    // استقبال طلبات الاتصال للمستقبل (للاتصال العادي)
     onValue(ref(db, `calls/${userId}`), (snapshot) => {
       if (snapshot.exists()) {
         const { from: callerId } = snapshot.val();
@@ -304,8 +271,6 @@
         remove(ref(db, `calls/${userId}`));
       }
     });
-
-    // للمُتصل (العادي) الاستماع لقبول الاتصال
     onValue(ref(db, `callsAccepted/${userId}`), (snapshot) => {
       if (snapshot.exists()) {
         const { callee } = snapshot.val();
@@ -314,8 +279,6 @@
         startCallerConnection(callee);
       }
     });
-
-    // وظيفة الاتصال العادي للمُتصل (caller)
     async function startCallerConnection(calleeId) {
       const connectionKey = `${userId}_${calleeId}`;
       peerConnection = new RTCPeerConnection(configuration);
@@ -372,8 +335,6 @@
         }
       });
     }
-
-    // وظيفة الاتصال العادي للمستقبل (callee)
     async function startCalleeConnection(callerId) {
       answerCreated = false;
       const connectionKey = `${callerId}_${userId}`;
@@ -400,7 +361,6 @@
           answerCreated = true;
           const offerData = snapshot.val();
           try {
-            // إذا لم يتم ضبط remoteDescription بعد، فقم بضبطه
             if (!peerConnection.remoteDescription) {
               await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
             }
@@ -434,8 +394,6 @@
         }
       });
     }
-
-    // وظيفة إلغاء الاتصال أو الربط (للاتصال العادي والعشوائي)
     function cancelCall() {
       if (peerConnection) {
         peerConnection.close();
@@ -456,10 +414,7 @@
       document.getElementById("randomCallBtn").style.display = "inline-block";
       currentCallMode = "normal";
     }
-
     document.getElementById("cancelCallBtn").addEventListener("click", cancelCall);
-
-    // وظيفة الانضمام لاتصال عشوائي
     function joinRandomCall() {
       currentCallMode = "random";
       set(ref(db, `randomCalls/${userId}`), { waiting: true, timestamp: Date.now() });
@@ -478,8 +433,6 @@
         }
       });
     }
-
-    // بدء الاتصال العشوائي بين المستخدمين
     async function startRandomCallConnection(partnerId) {
       const connectionKey = `random/${(userId < partnerId) ? userId + "_" + partnerId : partnerId + "_" + userId}`;
       if(userId < partnerId) {
@@ -593,29 +546,20 @@
         });
       }
     }
-
-    // زر الاتصال العشوائي
     document.getElementById("randomCallBtn").addEventListener("click", joinRandomCall);
-
-    // زر تبديل المستخدم: إنهاء الاتصال الحالي والبحث عن شريك جديد
     document.getElementById("switchUserBtn").addEventListener("click", function(){
       cancelCall();
       joinRandomCall();
     });
-
-    // زر إنهاء المكالمة في الوضع العشوائي
     document.getElementById("endCallRandomBtn").addEventListener("click", function(){
       cancelCall();
       document.getElementById("switchUserBtn").style.display = "none";
       document.getElementById("endCallRandomBtn").style.display = "none";
       document.getElementById("randomCallBtn").style.display = "inline-block";
     });
-
-    // إعداد مودال سجل المكالمات
     const historyModal = document.getElementById("historyModal");
     const historyBtn = document.getElementById("historyBtn");
     const closeModal = document.querySelector("#historyModal .close");
-
     historyBtn.addEventListener("click", () => {
       updateHistoryUI();
       historyModal.style.display = "block";
@@ -628,12 +572,9 @@
         historyModal.style.display = "none";
       }
     });
-
-    // زر حذف الحساب وإعادة التسجيل
     const deleteAccountBtn = document.getElementById("deleteAccountBtn");
     const reRegisterModal = document.getElementById("reRegisterModal");
     const reRegisterBtn = document.getElementById("reRegisterBtn");
-
     deleteAccountBtn.addEventListener("click", () => {
       if (confirm("هل أنت متأكد من حذف حسابك؟")) {
         localStorage.removeItem("userId");
@@ -641,7 +582,6 @@
         reRegisterModal.style.display = "block";
       }
     });
-
     reRegisterBtn.addEventListener("click", () => {
       userId = "313" + Math.floor(100 + Math.random() * 900);
       localStorage.setItem("userId", userId);
